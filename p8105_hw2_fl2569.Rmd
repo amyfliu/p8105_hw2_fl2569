@@ -1,0 +1,12 @@
+---
+title: "p8105_hw2_fl2569"
+author: "Fang Liu"
+date: "10/7/2021"
+output: github_document
+---
+
+## Problem 1
+
+## Problem 2
+
+## Problem 3 
