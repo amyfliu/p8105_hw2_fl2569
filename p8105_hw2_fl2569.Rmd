@@ -102,5 +102,19 @@ stock_df =
 stock_df
 ```
 
+#### Third, tidy the unemployment data:
+* Switch from "wide" to "long" format - make sure the key variables have same name
+```{r tidy_unemploymenet, message=FALSE}
+unemploy_df =
+  read_csv("./data/fivethirtyeight_datasets/unemployment.csv") %>% 
+  janitor::clean_names() %>%
+  pivot_longer(
+    jan:dec,
+    names_to = "month",
+    values_to = "unemploy"
+  )
+```
+
+
 
 ## Problem 3 
