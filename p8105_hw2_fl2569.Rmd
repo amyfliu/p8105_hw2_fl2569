@@ -7,6 +7,65 @@ output: github_document
 
 ## Problem 1
 
+#### Mr. Trash Wheel Data
+Specify the sheet in the Excel file and omit non-data entries using arguments in `read_excel`. 
+
+* Use reasonable variable names 
+* Omit rows that do not include dumpster-specific data 
+* Round the number of sports balls to the nearest integer 
+
+```{r setup, message = FALSE}
+library(tidyverse)
+library(readxl)
+options(tibble.print_min = 5)
+```
+
+```{r data_cleaning, message = FALSE}
+trash_wheel_df = 
+  read_excel("./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx", 
+                          sheet = "Mr. Trash Wheel", 
+                          range = cell_cols("A:N")) %>% 
+  janitor::clean_names() %>% 
+  drop_na(dumpster) %>%
+  mutate(sports_balls = round(sports_balls, digits = 0))
+```
+
+#### Precipitation Data
+Read and clean the precipitation data for 2018 and 2019:
+
+* Omit rows without precipitation data 
+* Add a variable for year
+
+```{r precip, message = FALSE}
+#2018 data
+precip_2018 =
+  read_excel("./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+                          sheet = "2018 Precipitation", 
+                          skip = 1) %>% 
+  janitor::clean_names() %>% 
+  mutate(year = 2018) %>% 
+  drop_na() 
+
+#2019 data
+precip_2019 =
+  read_excel("./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+                          sheet = "2019 Precipitation", 
+                          skip = 1) %>%
+  janitor::clean_names() %>% 
+  mutate(year = 2019) %>% 
+  drop_na()
+```
+
+Combine precipitation data sets and convert month (from numeric) to a character variable.
+```{r combine}
+precip_combined =
+  bind_rows(precip_2018, precip_2019) %>% 
+  mutate(month = month.name[month])
+
+precip_combined
+```
+
 ## Problem 2
+
 
 ## Problem 3 
