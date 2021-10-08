@@ -65,6 +65,13 @@ precip_combined =
 precip_combined
 ```
 
+#### Describe the data
+
+The `Mr. Trash Wheel` data has **`r nrow(trash_wheel_df)`** rows and **`r ncol(trash_wheel_df)`** columns. The variables are **`r names(trash_wheel_df)`**. The dataset tells us the volume and weight of trash collected by a certain dumpster on a given day and also include details on the type and quantify of trash collected, such as the number of plastic bottles and sports balls. The median number of sports balls in a dumpster in 2019, for example, is **`r median(pull(trash_wheel_df %>% filter(year == 2019) %>% select(sports_balls)))`**. 
+
+The combined precipitation data for 2018 and 2019 has **`r nrow(precip_combined)`** rows and **`r ncol(precip_combined)`** columns(`r names(precip_combined)`). The total precipitation in 2018 is **`r sum(pull(precip_combined %>% filter(year == 2018) %>% select(total)))`** inches.
+
+
 ## Problem 2
 
 
