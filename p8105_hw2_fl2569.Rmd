@@ -30,7 +30,7 @@ trash_wheel_df =
   mutate(sports_balls = round(sports_balls, digits = 0))
 ```
 
-#### Precipitation Data
+#### Clean and combine precipitation data
 Read and clean the precipitation data for 2018 and 2019:
 
 * Omit rows without precipitation data 
@@ -67,12 +67,28 @@ precip_combined
 
 #### Describe the data
 
-The `Mr. Trash Wheel` data has **`r nrow(trash_wheel_df)`** rows and **`r ncol(trash_wheel_df)`** columns. The variables are **`r names(trash_wheel_df)`**. The dataset tells us the volume and weight of trash collected by a certain dumpster on a given day and also include details on the type and quantify of trash collected, such as the number of plastic bottles and sports balls. The median number of sports balls in a dumpster in 2019, for example, is **`r median(pull(trash_wheel_df %>% filter(year == 2019) %>% select(sports_balls)))`**. 
+The *Mr. Trash Wheel* data has **`r nrow(trash_wheel_df)`** rows and **`r ncol(trash_wheel_df)`** columns. The variables are **`r names(trash_wheel_df)`**. The dataset tells us the volume and weight of trash collected by a certain dumpster on a given day and also include details on the type and quantify of trash collected, such as the number of plastic bottles and sports balls. The median number of sports balls in a dumpster in 2019, for example, is **`r median(pull(trash_wheel_df %>% filter(year == 2019) %>% select(sports_balls)))`**. 
 
-The combined precipitation data for 2018 and 2019 has **`r nrow(precip_combined)`** rows and **`r ncol(precip_combined)`** columns(`r names(precip_combined)`). The total precipitation in 2018 is **`r sum(pull(precip_combined %>% filter(year == 2018) %>% select(total)))`** inches.
+The combined precipitation data for 2018 and 2019 has **`r nrow(precip_combined)`** rows and **`r ncol(precip_combined)`** columns(i.e., `r names(precip_combined)`). The total precipitation in 2018 is **`r sum(pull(precip_combined %>% filter(year == 2018) %>% select(total)))`** inches.
 
 
 ## Problem 2
+The goal of this problem is to merge the data in pols-month.csv, unemployment.csv, and snp.csv into a single data frame, using **year** and **month** as keys across data sets. 
+
+#### First, clean the data in pols-month.csv: 
+* Use separate() to break up the variable mon into integer variables year,month,day
+* Replace month number with month name
+* Create a president variable taking values gop and dem; and 
+* remove prez_dem, prez_gop, day variable
+```{r clean_pols, message = FALSE}
+pols_df =
+  read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>% 
+  separate(mon, c('year', 'month', 'day'), sep = "-") %>%
+  mutate(month = month.name[as.numeric(month)]) %>% 
+  mutate(president = ifelse(prez_gop == 1, "gop", "dem")) %>% 
+  select(-prez_dem, -prez_gop, -day)
+```
+
 
 
 ## Problem 3 
