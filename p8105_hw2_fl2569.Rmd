@@ -75,27 +75,32 @@ The combined precipitation data for 2018 and 2019 has **`r nrow(precip_combined)
 ## Problem 2
 The goal of this problem is to merge the data in pols-month.csv, unemployment.csv, and snp.csv into a single data frame, using **year** and **month** as keys across data sets. 
 
-#### First, clean the data in pols-month.csv: 
+#### First, clean the data in `pols-month.csv`: 
 * Use separate() to break up the variable mon into integer variables year,month,day
 * Replace month number with month name
-* Create a president variable taking values gop and dem; and 
+* Create a president variable taking values gop and dem
 * remove prez_dem, prez_gop, day variable
 ```{r clean_pols, message = FALSE}
 pols_df =
   read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>% 
-  separate(mon, c('year', 'month', 'day'), sep = "-") %>%
-  mutate(month = month.name[as.numeric(month)]) %>% 
+  separate(mon, c('year', 'month', 'day'), sep = "-", convert = TRUE) %>%
+  mutate(month = str_to_lower(month.abb[month])) %>% 
   mutate(president = ifelse(prez_gop == 1, "gop", "dem")) %>% 
   select(-prez_dem, -prez_gop, -day)
+
+pols_df
+# or we can use mutate(president = recode(prez_gop, "0" ="dem", "1" = "gop", "2" = "gop"))
 ```
 
-#### Second, clean the data in snp.csv:
+#### Second, clean the data in `snp.csv`:
 Arrange according to year and month, and organize so that year and month are the leading columns.
 ```{r clean_snp, message = FALSE}
 stock_df =
   read_csv("./data/fivethirtyeight_datasets/snp.csv") %>% 
-  separate(date, c('month', 'day', 'year'), sep = "/") %>%
-  mutate(month = month.name[as.numeric(month)]) %>% 
+  separate(date, c('month', 'day', 'year'), sep = "/", convert = TRUE) %>%
+  mutate(
+    year = ifelse(year <= 15, year + 2000, year + 1900), 
+    month = str_to_lower(month.abb[month])) %>% 
   arrange(year, month) %>%
   select(year, month, close)
 
@@ -113,8 +118,37 @@ unemploy_df =
     names_to = "month",
     values_to = "unemploy"
   )
+
+unemploy_df
 ```
 
+#### Join the datasets 
+Merge snp into pols, and unemployment into the result.
+```{r join_data}
+#Merge stock data into politician data
+snp_and_pol =
+  left_join(pols_df, stock_df, by = c("year", "month"))
+
+#Merge unemployment data into results
+final_join_data =
+  left_join(snp_and_pol, unemploy_df, by = c("year", "month"))
+```
+
+#### Describe the datasets 
+Explain briefly what each dataset contained, and describe the resulting dataset (e.g. give the dimension, range of years, and names of key variables).
+
+The `pols_df` dataset has **`r nrow(pols_df)`** rows and **`r ncol(pols_df)`** columns. It gives us the # of national politicians who are democratic or republican at any given time (i.e., the # of republican/democratic governors, senators, representatives) and also whether the president is a republican or democratic. 
+
+The `stock_df` dataset has  **`r nrow(stock_df)`** rows and **`r ncol(stock_df)`** columns. This dataset gives the closing values of the S&P stock index on a cetain date and is used a representative measure of the stock market. 
+
+The `unemploy_df` dataset has **`r nrow(unemploy_df)`** rows and **`r ncol(unemploy_df)`** columns and gives the percentage of unemployment in a certain month of a year. The average unemployment rate in 1948 is `r mean(filter(unemploy_df, year == 1948) %>% pull(unemploy), na.rm = TRUE)`%. The average unemployment rate in 2008 is `r mean(filter(unemploy_df, year == 2008) %>% pull(unemploy), na.rm = TRUE)`%.
+
+The combined dataset (with politician data, stock market, and unemployment data) has **`r nrow(final_join_data)`** rows and **`r ncol(final_join_data)`** columns (i.e., `r names(final_join_data)`). The data contains information from year **`r min(pull(final_join_data, year))`** to year **`r max(pull(final_join_data, year))`**. 
+
+```{r unemploy_trend, echo=FALSE}
+plot(x = pull(unemploy_df, year), y = pull(unemploy_df, unemploy))
+plot(x = pull(stock_df, year), y = pull(stock_df, close), xlab = 'year', ylab = 'S&P price($)')
+```
 
 
 ## Problem 3 
