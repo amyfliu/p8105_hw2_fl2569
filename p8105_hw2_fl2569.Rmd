@@ -89,6 +89,18 @@ pols_df =
   select(-prez_dem, -prez_gop, -day)
 ```
 
+#### Second, clean the data in snp.csv:
+Arrange according to year and month, and organize so that year and month are the leading columns.
+```{r clean_snp, message = FALSE}
+stock_df =
+  read_csv("./data/fivethirtyeight_datasets/snp.csv") %>% 
+  separate(date, c('month', 'day', 'year'), sep = "/") %>%
+  mutate(month = month.name[as.numeric(month)]) %>% 
+  arrange(year, month) %>%
+  select(year, month, close)
+
+stock_df
+```
 
 
 ## Problem 3 
