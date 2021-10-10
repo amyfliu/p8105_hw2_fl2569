@@ -22,12 +22,14 @@ options(tibble.print_min = 5)
 
 ```{r data_cleaning, message = FALSE}
 trash_wheel_df = 
-  read_excel("./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx", 
+  read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", 
                           sheet = "Mr. Trash Wheel", 
                           range = cell_cols("A:N")) %>% 
   janitor::clean_names() %>% 
   drop_na(dumpster) %>%
   mutate(sports_balls = round(sports_balls, digits = 0))
+
+trash_wheel_df
 ```
 
 #### Clean and combine precipitation data
@@ -39,7 +41,7 @@ Read and clean the precipitation data for 2018 and 2019:
 ```{r precip, message = FALSE}
 #2018 data
 precip_2018 =
-  read_excel("./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+  read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx",
                           sheet = "2018 Precipitation", 
                           skip = 1) %>% 
   janitor::clean_names() %>% 
@@ -48,7 +50,7 @@ precip_2018 =
 
 #2019 data
 precip_2019 =
-  read_excel("./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+  read_excel("./data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx",
                           sheet = "2019 Precipitation", 
                           skip = 1) %>%
   janitor::clean_names() %>% 
@@ -73,23 +75,22 @@ The combined precipitation data for 2018 and 2019 has **`r nrow(precip_combined)
 
 
 ## Problem 2
-The goal of this problem is to merge the data in pols-month.csv, unemployment.csv, and snp.csv into a single data frame, using **year** and **month** as keys across data sets. 
+The goal of this problem is to merge the data in `pols-month.csv`, `unemployment.csv`, and `snp.csv` into a single data frame, using **year** and **month** as keys across data sets. 
 
 #### First, clean the data in `pols-month.csv`: 
-* Use separate() to break up the variable mon into integer variables year,month,day
+* Use separate( ) to break up the variable `mon` into integer variables year, month, day
 * Replace month number with month name
 * Create a president variable taking values gop and dem
-* remove prez_dem, prez_gop, day variable
+* Remove prez_dem, prez_gop, day variable
 ```{r clean_pols, message = FALSE}
 pols_df =
   read_csv("./data/fivethirtyeight_datasets/pols-month.csv") %>% 
   separate(mon, c('year', 'month', 'day'), sep = "-", convert = TRUE) %>%
   mutate(month = str_to_lower(month.abb[month])) %>% 
-  mutate(president = ifelse(prez_gop == 1, "gop", "dem")) %>% 
+  mutate(president = ifelse(prez_dem == 1, "dem", "gop")) %>% 
   select(-prez_dem, -prez_gop, -day)
 
 pols_df
-# or we can use mutate(president = recode(prez_gop, "0" ="dem", "1" = "gop", "2" = "gop"))
 ```
 
 #### Second, clean the data in `snp.csv`:
@@ -145,10 +146,71 @@ The `unemploy_df` dataset has **`r nrow(unemploy_df)`** rows and **`r ncol(unemp
 
 The combined dataset (with politician data, stock market, and unemployment data) has **`r nrow(final_join_data)`** rows and **`r ncol(final_join_data)`** columns (i.e., `r names(final_join_data)`). The data contains information from year **`r min(pull(final_join_data, year))`** to year **`r max(pull(final_join_data, year))`**. 
 
-```{r unemploy_trend, echo=FALSE}
-plot(x = pull(unemploy_df, year), y = pull(unemploy_df, unemploy))
-plot(x = pull(stock_df, year), y = pull(stock_df, close), xlab = 'year', ylab = 'S&P price($)')
+## Problem 3 
+Load and tidy the data. Note: the names of a categorical predictor and the case structure of string variables changes over time; some rows are duplicated and need to be removed.
+```{r load_p3}
+baby_names_df = 
+  read_csv("./data/Popular_Baby_Names.csv", col_types = 'icccii') %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    gender = tolower(gender),
+    ethnicity = tolower(ethnicity),
+    ethnicity = case_when(
+      ethnicity %in% c("asian and paci", "asian and pacific islander") ~ "asian and pacific islander",
+      ethnicity %in% c("black non hispanic", "black non hisp") ~ "black non hispanic",
+      ethnicity %in% c("white non hispanic", "white non hisp") ~ "white non hispanic",
+      TRUE ~ "hispanic"),
+    childs_first_name = tolower(childs_first_name)) %>% 
+  distinct()
+
+baby_names_df
 ```
 
+#### Produce a well-structured, reader-friendly table showing:
+* The rank in popularity of the name “Olivia” as a female baby name over time
+* Rows for ethnicity and columns for year
+```{r popularity_trend}
+olivia_rank =
+  baby_names_df %>% 
+  filter(childs_first_name == 'olivia', gender == 'female') %>% 
+  select(year_of_birth, ethnicity, rank) %>%
+  arrange(by_group = year_of_birth)
 
-## Problem 3 
+olivia_table = 
+  pivot_wider(olivia_rank,
+              names_from = year_of_birth,
+              values_from = rank)
+olivia_table
+```
+
+#### Produce a similar table showing the most popular name among male children over time
+```{r popularity_male}
+male_popularity =
+  baby_names_df %>%
+  filter(gender == "male", rank == 1) %>%
+  select(year_of_birth, ethnicity, childs_first_name) %>% 
+  arrange(by_group = year_of_birth)
+
+male_table = 
+  pivot_wider(male_popularity,
+              names_from = year_of_birth,
+              values_from = childs_first_name)
+male_table
+```
+
+#### Produce a scatter plot 
+* For male, white non-Hispanic children born in 2016
+* Show the # of children with a name (y axis) against the rank in popularity of that name (x axis)
+```{r scatter}
+scatter_data =
+  baby_names_df %>% 
+  filter(year_of_birth == 2016, 
+         gender == "male", 
+         ethnicity == 'white non hispanic') %>% 
+  arrange(rank)
+
+plot(pull(scatter_data, rank), pull(scatter_data, count),
+     xlab = 'rank', 
+     ylab = '# of children with the name', 
+     main = 'Rank of name vs. # of children with that name')
+```
